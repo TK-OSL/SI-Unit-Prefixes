@@ -1,0 +1,731 @@
+<!--
+  =============================================================================
+  Title: Interactive Learning for SI Unit Prefixes
+  Author: [Your Name/Gemini AI]
+  Date: May 14, 2026
+  Description:
+    An interactive web application designed to teach and test knowledge of
+    Standard International (SI) unit prefixes. It features a learning mode
+    with a comprehensive table and a quiz mode for practice.
+    
+    Built with HTML5, CSS3 (Tailwind CSS for styling), and vanilla JavaScript.
+  
+  Dependencies:
+    - Tailwind CSS (via CDN)
+    - FontAwesome (via CDN for icons)
+  
+  Credits:
+    - Educational content concept inspired by general physics curricula.
+    - Brought to you by OpenSimLab.org & Gemini AI.
+  =============================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI Unit Prefixes Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom Styles for animations and specific touches */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Specific styling for the table to make it look clean */
+        .prefix-table th {
+            position: sticky;
+            top: 0;
+            background-color: #f1f5f9;
+            z-index: 10;
+        }
+        
+        .correct-answer {
+            background-color: #dcfce7 !important; /* Tailwind green-100 */
+            border-color: #22c55e !important; /* Tailwind green-500 */
+            color: #166534 !important; /* Tailwind green-800 */
+        }
+        
+        .wrong-answer {
+            background-color: #fee2e2 !important; /* Tailwind red-100 */
+            border-color: #ef4444 !important; /* Tailwind red-500 */
+            color: #991b1b !important; /* Tailwind red-800 */
+        }
+        
+        .hide {
+            display: none;
+        }
+
+        /* Language Toggle Switch Styles */
+        .lang-switch-container {
+            background-color: #f1f5f9;
+            padding: 4px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+        .lang-btn {
+            padding: 4px 16px;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            outline: none;
+            background: transparent;
+        }
+        .lang-btn.active {
+            background-color: #ffffff;
+            color: #f97316; /* Orange color matching your image */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .lang-btn.inactive {
+            color: #64748b; /* Slate color */
+        }
+        .lang-btn.inactive:hover {
+            color: #475569;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col items-center p-4 sm:p-8 pt-16 sm:pt-8">
+
+    <!-- Language Switcher -->
+    <div class="absolute top-4 right-4 sm:top-6 sm:right-8 z-50">
+        <div class="lang-switch-container shadow-sm">
+            <button id="btn-lang-en" class="lang-btn active" onclick="setLanguage('en')">EN</button>
+            <button id="btn-lang-th" class="lang-btn inactive" onclick="setLanguage('th')">TH</button>
+        </div>
+    </div>
+
+    <header class="w-full max-w-4xl text-center mb-8 fade-in mt-4 sm:mt-0">
+        <h1 class="text-4xl font-bold text-indigo-700 mb-2">
+            <i class="fas fa-ruler-combined mr-2"></i><span data-i18n="appTitle">SI Unit Prefixes Explorer</span>
+        </h1>
+        <p class="text-slate-600 text-lg" data-i18n="appDesc">Learn and understand SI unit prefixes easily.</p>
+        
+        <div class="mt-6 flex justify-center space-x-4">
+            <button id="btn-learn" class="px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold shadow-md hover:bg-indigo-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                <i class="fas fa-book-open mr-2"></i><span data-i18n="tabLearn">Learn</span>
+            </button>
+            <button id="btn-examples" class="px-6 py-2 bg-white text-indigo-600 border border-indigo-600 rounded-full font-semibold shadow-sm hover:bg-indigo-50 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                <i class="fas fa-cogs mr-2"></i><span data-i18n="tabExamples">Interactive Examples</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="w-full max-w-4xl flex-grow flex flex-col items-center">
+        
+        <!-- Learn Section -->
+        <section id="section-learn" class="w-full glass-panel rounded-2xl p-6 sm:p-8 w-full fade-in">
+            <h2 class="text-2xl font-semibold mb-4 text-slate-800 border-b pb-2" data-i18n="learnHeader">What are SI Prefixes?</h2>
+            
+            <div class="mb-8 text-slate-700 leading-relaxed space-y-4">
+                <p data-i18n="learnP1">
+                    In the International System of Units (SI), <strong>prefixes</strong> are words or letters placed <span class="text-indigo-600 font-semibold">in front of basic units</span> (like meter, gram, second). They act as a <strong>multiplier (based on powers of 10)</strong> for that unit.
+                </p>
+                <p data-i18n="learnP2">
+                    <strong>Why do we use prefixes?</strong> <br>
+                    In science and daily life, we often work with very <em>large</em> numbers (like the distance to a star) or very <em>small</em> numbers (like the size of a virus). Writing many zeros is hard to read and takes too much space. Prefixes were created to make numbers shorter, easier to read, and standard around the world.
+                </p>
+                
+                <div class="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded-r-lg shadow-sm">
+                    <h4 class="font-semibold text-indigo-800 mb-2"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i><span data-i18n="learnExTitle">Examples to help you understand:</span></h4>
+                    <ul class="list-disc list-inside text-sm md:text-base text-indigo-900 space-y-2">
+                        <li data-i18n="learnEx1"><strong>Very large value:</strong> A distance of <strong>5,000 meters</strong> is equal to 5 &times; 10<sup>3</sup> meters. We use the prefix "kilo (10<sup>3</sup>)" instead, making it <strong>5 kilometers (5 km)</strong>.</li>
+                        <li data-i18n="learnEx2"><strong>Very small value:</strong> A dust particle of <strong>0.000 001 meters</strong> is equal to 1 &times; 10<sup>-6</sup> meters. We use the prefix "micro (10<sup>-6</sup>)" instead, making it <strong>1 micrometer (1 &mu;m)</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3 class="text-xl font-semibold mb-3 text-slate-800 border-b pb-2" data-i18n="tableHeader">Complete Table of SI Prefixes</h3>
+            
+            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm mb-4">
+                <table class="w-full text-left border-collapse prefix-table">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700">
+                            <th class="p-4 font-semibold border-b border-slate-200" data-i18n="colPrefix">Prefix</th>
+                            <th class="p-4 font-semibold border-b border-slate-200" data-i18n="colSymbol">Symbol</th>
+                            <th class="p-4 font-semibold border-b border-slate-200 text-right" data-i18n="colMultiplier">Multiplier</th>
+                            <th class="p-4 font-semibold border-b border-slate-200" data-i18n="colPower">Power of 10</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prefix-table-body" class="bg-white">
+                        <!-- Table rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800 text-sm" data-i18n="tipText">
+                <strong>💡 Tip:</strong> Notice that common prefixes usually increase or decrease by steps of 10<sup>3</sup> (like kilo, mega, milli, micro).
+            </div>
+        </section>
+
+        <!-- Examples Section -->
+        <section id="section-examples" class="w-full glass-panel rounded-2xl p-6 sm:p-8 w-full hide fade-in">
+            <div class="flex items-center mb-6 border-b pb-4">
+                <h2 class="text-2xl font-semibold text-slate-800">
+                    <i class="fas fa-cogs text-indigo-500 mr-2"></i><span data-i18n="toolsHeader">Interactive Tools</span>
+                </h2>
+            </div>
+            
+            <!-- Tool 1 -->
+            <div class="mb-2">
+                <h3 class="text-xl font-bold text-slate-800 mb-2" data-i18n="t1Title">Tool 1: Decode a Prefix</h3>
+                <p class="mb-6 text-slate-600" data-i18n="t1Desc">Enter a number, select a prefix, and choose a base unit to see the real mathematical value.</p>
+            </div>
+
+            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner mb-8">
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-center">
+                    <!-- Input Value -->
+                    <div class="w-full md:w-1/4">
+                        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="lblNum">Enter Number</label>
+                        <input type="number" id="input-value" value="1" step="any" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg text-center" placeholder="e.g. 5">
+                    </div>
+                    
+                    <!-- Prefix Dropdown -->
+                    <div class="w-full md:w-2/4">
+                        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="lblPrefix">Select Prefix</label>
+                        <select id="select-prefix" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg font-medium">
+                            <!-- Options generated via JS -->
+                        </select>
+                    </div>
+
+                    <!-- Base Unit Dropdown -->
+                    <div class="w-full md:w-1/4">
+                        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="lblUnit">Select Base Unit</label>
+                        <select id="select-unit" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg text-center font-medium">
+                            <option value="m" data-i18n="unit_m">Meter (m)</option>
+                            <option value="g" data-i18n="unit_g">Gram (g)</option>
+                            <option value="s" data-i18n="unit_s">Second (s)</option>
+                            <option value="A" data-i18n="unit_A">Ampere (A)</option>
+                            <option value="W" data-i18n="unit_W">Watt (W)</option>
+                            <option value="Hz" data-i18n="unit_Hz">Hertz (Hz)</option>
+                            <option value="B" data-i18n="unit_B">Byte (B)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Display -->
+            <div class="bg-indigo-600 text-white rounded-xl p-8 text-center shadow-lg transform transition duration-500">
+                <h3 class="text-indigo-200 text-sm font-semibold uppercase tracking-wider mb-4" data-i18n="resultTitle">Conversion Result</h3>
+                
+                <div class="flex flex-col md:flex-row justify-center items-center gap-4 text-3xl md:text-4xl font-bold mb-8">
+                    <div id="display-input-term" class="bg-indigo-800/60 px-6 py-3 rounded-xl border border-indigo-500/50 min-w-[120px]">1 km</div>
+                    <div class="text-indigo-300"><i class="fas fa-equals"></i></div>
+                    <div id="display-result-decimal" class="bg-indigo-800/60 px-6 py-3 rounded-xl border border-indigo-500/50 min-w-[120px]">1,000 m</div>
+                </div>
+                
+                <div class="inline-block bg-white/10 border border-white/20 px-8 py-4 rounded-full text-xl md:text-2xl font-mono shadow-inner">
+                    <span class="text-indigo-200 text-lg mr-2 font-sans" data-i18n="sciNotation">Scientific Notation:</span> 
+                    <span id="display-result-scientific" class="font-bold">1 &times; 10<sup>3</sup></span> <span id="display-result-unit" class="ml-1 text-indigo-100">m</span>
+                </div>
+            </div>
+
+            <!-- Tool 2: Number to Prefix -->
+            <div class="mt-12 pt-8 border-t border-slate-200 fade-in">
+                <div class="flex items-center mb-4">
+                    <h3 class="text-xl font-bold text-slate-800" data-i18n="t2Title">Tool 2: Find the Best Prefix</h3>
+                    <span class="ml-3 bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded uppercase tracking-wide" data-i18n="badgeNew">New</span>
+                </div>
+                <p class="mb-6 text-slate-600" data-i18n="t2Desc">Type a very large or very small number. The system will automatically convert it into the most suitable engineering prefix (multiples of 10³).</p>
+
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner mb-6">
+                    <div class="flex flex-col md:flex-row gap-4 items-center justify-center">
+                        <!-- Input Raw Value -->
+                        <div class="w-full md:w-2/3">
+                            <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="lblRawNum">Enter Raw Number</label>
+                            <input type="number" id="input-raw-value" value="0.000005" step="any" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg font-mono" placeholder="e.g. 15000 or 0.005">
+                        </div>
+                        
+                        <!-- Base Unit Dropdown -->
+                        <div class="w-full md:w-1/3">
+                            <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="lblRawUnit">Select Base Unit</label>
+                            <select id="select-raw-unit" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg text-center font-medium">
+                                <option value="m" data-i18n="unit_m">Meter (m)</option>
+                                <option value="g" data-i18n="unit_g">Gram (g)</option>
+                                <option value="s" data-i18n="unit_s">Second (s)</option>
+                                <option value="A" data-i18n="unit_A">Ampere (A)</option>
+                                <option value="W" data-i18n="unit_W">Watt (W)</option>
+                                <option value="Hz" data-i18n="unit_Hz">Hertz (Hz)</option>
+                                <option value="B" data-i18n="unit_B">Byte (B)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Best Prefix Display -->
+                <div class="bg-slate-800 text-white rounded-xl p-8 text-center shadow-lg transform transition duration-500">
+                    <h4 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-2" data-i18n="sugFormat">Suggested Format</h4>
+                    <div id="display-best-result" class="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+                        5 <span class="text-indigo-300">µm</span>
+                    </div>
+                    
+                    <div class="inline-block bg-slate-900/60 border border-slate-700 px-6 py-3 rounded-full text-lg md:text-xl font-mono shadow-inner mb-4">
+                        <span class="text-slate-400 text-base mr-2 font-sans" data-i18n="sciNotation">Scientific Notation:</span> 
+                        <span id="display-best-scientific" class="font-bold">5 &times; 10<sup>-6</sup></span> <span id="display-best-scientific-unit" class="ml-1 text-slate-300">m</span>
+                    </div>
+                    <br>
+                    
+                    <div class="inline-block bg-slate-700/50 border border-slate-600 px-4 py-2 rounded-full text-sm font-medium text-slate-300">
+                        <span data-i18n="usingPrefix">Using Prefix:</span> <span id="display-best-name" class="text-white font-bold ml-1">micro (µ)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="w-full max-w-4xl text-center mt-12 mb-4 pt-6 border-t border-slate-300 text-slate-500 text-sm">
+        <p class="mb-2" data-i18n="footer1">Created for educational purposes.</p>
+        <p class="font-medium text-slate-700" data-i18n="footer2">
+            Powered by <a href="https://opensimlab.org" target="_blank" class="text-indigo-600 hover:underline hover:text-indigo-800 transition">OpenSimLab.org</a> & Gemini AI
+        </p>
+    </footer>
+
+    <script>
+        /**
+         * Translations Dictionary (i18n)
+         */
+        const translations = {
+            en: {
+                appTitle: "SI Unit Prefixes Explorer",
+                appDesc: "Learn and understand SI unit prefixes easily.",
+                tabLearn: "Learn",
+                tabExamples: "Interactive Examples",
+                learnHeader: "What are SI Prefixes?",
+                learnP1: "In the International System of Units (SI), <strong>prefixes</strong> are words or letters placed <span class=\"text-indigo-600 font-semibold\">in front of basic units</span> (like meter, gram, second). They act as a <strong>multiplier (based on powers of 10)</strong> for that unit.",
+                learnP2: "<strong>Why do we use prefixes?</strong> <br>In science and daily life, we often work with very <em>large</em> numbers (like the distance to a star) or very <em>small</em> numbers (like the size of a virus). Writing many zeros is hard to read and takes too much space. Prefixes were created to make numbers shorter, easier to read, and standard around the world.",
+                learnExTitle: "Examples to help you understand:",
+                learnEx1: "<strong>Very large value:</strong> A distance of <strong>5,000 meters</strong> is equal to 5 &times; 10<sup>3</sup> meters. We use the prefix \"kilo (10<sup>3</sup>)\" instead, making it <strong>5 kilometers (5 km)</strong>.",
+                learnEx2: "<strong>Very small value:</strong> A dust particle of <strong>0.000 001 meters</strong> is equal to 1 &times; 10<sup>-6</sup> meters. We use the prefix \"micro (10<sup>-6</sup>)\" instead, making it <strong>1 micrometer (1 &mu;m)</strong>.",
+                tableHeader: "Complete Table of SI Prefixes",
+                colPrefix: "Prefix",
+                colSymbol: "Symbol",
+                colMultiplier: "Multiplier",
+                colPower: "Power of 10",
+                tipText: "<strong>💡 Tip:</strong> Notice that common prefixes usually increase or decrease by steps of 10<sup>3</sup> (like kilo, mega, milli, micro).",
+                toolsHeader: "Interactive Tools",
+                t1Title: "Tool 1: Decode a Prefix",
+                t1Desc: "Enter a number, select a prefix, and choose a base unit to see the real mathematical value.",
+                lblNum: "Enter Number",
+                lblPrefix: "Select Prefix",
+                lblUnit: "Select Base Unit",
+                optNoPrefix: "-- No Prefix (Base Unit) --",
+                resultTitle: "Conversion Result",
+                sciNotation: "Scientific Notation:",
+                t2Title: "Tool 2: Find the Best Prefix",
+                badgeNew: "New",
+                t2Desc: "Type a very large or very small number. The system will automatically convert it into the most suitable engineering prefix (multiples of 10³).",
+                lblRawNum: "Enter Raw Number",
+                lblRawUnit: "Select Base Unit",
+                sugFormat: "Suggested Format",
+                usingPrefix: "Using Prefix:",
+                baseUnitNone: "Base Unit (No Prefix)",
+                submultiplesHeader: "Submultiples (Values less than 1)",
+                seeSciFormat: "See Scientific Notation",
+                footer1: "Created for educational purposes.",
+                footer2: "Powered by <a href=\"https://opensimlab.org\" target=\"_blank\" class=\"text-indigo-600 hover:underline hover:text-indigo-800 transition\">OpenSimLab.org</a> & Gemini AI",
+                // units
+                unit_m: "Meter (m)",
+                unit_g: "Gram (g)",
+                unit_s: "Second (s)",
+                unit_A: "Ampere (A)",
+                unit_W: "Watt (W)",
+                unit_Hz: "Hertz (Hz)",
+                unit_B: "Byte (B)"
+            },
+            th: {
+                appTitle: "ตัวสำรวจคำอุปสรรคหน่วย SI",
+                appDesc: "เรียนรู้และทำความเข้าใจคำอุปสรรคหน่วย SI ได้อย่างง่ายดาย",
+                tabLearn: "เรียนรู้",
+                tabExamples: "ตัวอย่างเชิงโต้ตอบ",
+                learnHeader: "คำอุปสรรค SI คืออะไร?",
+                learnP1: "ในระบบหน่วยวัดระหว่างประเทศ (SI) <strong>คำอุปสรรค (Prefixes)</strong> คือคำหรือตัวอักษรที่วางไว้ <span class=\"text-indigo-600 font-semibold\">หน้าหน่วยพื้นฐาน</span> (เช่น เมตร กรัม วินาที) ทำหน้าที่เป็น <strong>ตัวคูณ (อิงตามเลขยกกำลังของ 10)</strong> สำหรับหน่วยนั้นๆ",
+                learnP2: "<strong>ทำไมเราถึงใช้คำอุปสรรค?</strong> <br>ในทางวิทยาศาสตร์และชีวิตประจำวัน เรามักทำงานกับตัวเลขที่ <em>ใหญ่มาก</em> (เช่น ระยะทางไปดวงดาว) หรือ <em>เล็กมาก</em> (เช่น ขนาดของไวรัส) การเขียนเลขศูนย์หลายๆ ตัวนั้นอ่านยากและใช้พื้นที่มาก คำอุปสรรคจึงถูกสร้างขึ้นเพื่อให้ตัวเลขสั้นลง อ่านง่ายขึ้น และเป็นมาตรฐานสากลทั่วโลก",
+                learnExTitle: "ตัวอย่างเพื่อช่วยให้คุณเข้าใจ:",
+                learnEx1: "<strong>ค่าที่ใหญ่มาก:</strong> ระยะทาง <strong>5,000 เมตร</strong> มีค่าเท่ากับ 5 &times; 10<sup>3</sup> เมตร เราใช้คำอุปสรรค \"กิโล (10<sup>3</sup>)\" แทน ทำให้กลายเป็น <strong>5 กิโลเมตร (5 km)</strong>",
+                learnEx2: "<strong>ค่าที่เล็กมาก:</strong> ฝุ่นขนาด <strong>0.000 001 เมตร</strong> มีค่าเท่ากับ 1 &times; 10<sup>-6</sup> เมตร เราใช้คำอุปสรรค \"ไมโคร (10<sup>-6</sup>)\" แทน ทำให้กลายเป็น <strong>1 ไมโครเมตร (1 &mu;m)</strong>",
+                tableHeader: "ตารางคำอุปสรรค SI ฉบับสมบูรณ์",
+                colPrefix: "คำอุปสรรค",
+                colSymbol: "สัญลักษณ์",
+                colMultiplier: "ตัวคูณ",
+                colPower: "เลขยกกำลัง",
+                tipText: "<strong>💡 เคล็ดลับ:</strong> สังเกตว่าคำอุปสรรคที่ใช้บ่อยมักจะเพิ่มขึ้นหรือลดลงทีละ 10<sup>3</sup> (เช่น กิโล เมกะ มิลลิ ไมโคร)",
+                toolsHeader: "เครื่องมือโต้ตอบ",
+                t1Title: "เครื่องมือ 1: ถอดรหัสคำอุปสรรค",
+                t1Desc: "กรอกตัวเลข เลือกคำอุปสรรค และเลือกหน่วยพื้นฐาน เพื่อดูค่าทางคณิตศาสตร์ที่แท้จริง",
+                lblNum: "กรอกตัวเลข",
+                lblPrefix: "เลือกคำอุปสรรค",
+                lblUnit: "เลือกหน่วยพื้นฐาน",
+                optNoPrefix: "-- ไม่มีคำอุปสรรค (หน่วยหลัก) --",
+                resultTitle: "ผลการแปลง",
+                sciNotation: "สัญกรณ์วิทยาศาสตร์:",
+                t2Title: "เครื่องมือ 2: หาคำอุปสรรคที่เหมาะสมที่สุด",
+                badgeNew: "ใหม่",
+                t2Desc: "พิมพ์ตัวเลขที่มีค่ามากหรือน้อยมากๆ ระบบจะแปลงเป็นคำอุปสรรคที่เหมาะสมที่สุดให้อัตโนมัติ (ทวีคูณของ 10³)",
+                lblRawNum: "กรอกตัวเลขดิบ",
+                lblRawUnit: "เลือกหน่วยพื้นฐาน",
+                sugFormat: "รูปแบบที่แนะนำ",
+                usingPrefix: "ใช้คำอุปสรรค:",
+                baseUnitNone: "หน่วยพื้นฐาน (ไม่มีคำอุปสรรค)",
+                submultiplesHeader: "ค่าน้อยกว่า 1 (Submultiples)",
+                seeSciFormat: "ดูสัญกรณ์วิทยาศาสตร์",
+                footer1: "สร้างขึ้นเพื่อวัตถุประสงค์ทางการศึกษา",
+                footer2: "ขับเคลื่อนโดย <a href=\"https://opensimlab.org\" target=\"_blank\" class=\"text-indigo-600 hover:underline hover:text-indigo-800 transition\">OpenSimLab.org</a> & Gemini AI",
+                // units
+                unit_m: "เมตร (m)",
+                unit_g: "กรัม (g)",
+                unit_s: "วินาที (s)",
+                unit_A: "แอมแปร์ (A)",
+                unit_W: "วัตต์ (W)",
+                unit_Hz: "เฮิรตซ์ (Hz)",
+                unit_B: "ไบต์ (B)"
+            }
+        };
+
+        let currentLang = 'en';
+
+        /**
+         * SI Prefixes Data
+         * Contains the standard SI prefixes used for learning and quiz generation.
+         */
+        const siPrefixes = [
+            { name: "yotta", thaiName: "ยอตตะ", symbol: "Y", power: 24, multiplier: "1,000,000,000,000,000,000,000,000" },
+            { name: "zetta", thaiName: "เซตตะ", symbol: "Z", power: 21, multiplier: "1,000,000,000,000,000,000,000" },
+            { name: "exa", thaiName: "เอกซะ", symbol: "E", power: 18, multiplier: "1,000,000,000,000,000,000" },
+            { name: "peta", thaiName: "เพตะ", symbol: "P", power: 15, multiplier: "1,000,000,000,000,000" },
+            { name: "tera", thaiName: "เทระ", symbol: "T", power: 12, multiplier: "1,000,000,000,000" },
+            { name: "giga", thaiName: "จิกะ", symbol: "G", power: 9, multiplier: "1,000,000,000" },
+            { name: "mega", thaiName: "เมกะ", symbol: "M", power: 6, multiplier: "1,000,000" },
+            { name: "kilo", thaiName: "กิโล", symbol: "k", power: 3, multiplier: "1,000" },
+            { name: "hecto", thaiName: "เฮกโต", symbol: "h", power: 2, multiplier: "100" },
+            { name: "deka", thaiName: "เดคา", symbol: "da", power: 1, multiplier: "10" },
+            // Base unit implicitly here (10^0)
+            { name: "deci", thaiName: "เดซิ", symbol: "d", power: -1, multiplier: "0.1" },
+            { name: "centi", thaiName: "เซนติ", symbol: "c", power: -2, multiplier: "0.01" },
+            { name: "milli", thaiName: "มิลลิ", symbol: "m", power: -3, multiplier: "0.001" },
+            { name: "micro", thaiName: "ไมโคร", symbol: "μ", power: -6, multiplier: "0.000 001" },
+            { name: "nano", thaiName: "นาโน", symbol: "n", power: -9, multiplier: "0.000 000 001" },
+            { name: "pico", thaiName: "พิโก", symbol: "p", power: -12, multiplier: "0.000 000 000 001" },
+            { name: "femto", thaiName: "เฟมโต", symbol: "f", power: -15, multiplier: "0.000 000 000 000 001" },
+            { name: "atto", thaiName: "อัตโต", symbol: "a", power: -18, multiplier: "0.000 000 000 000 000 001" },
+            { name: "zepto", thaiName: "เซปโต", symbol: "z", power: -21, multiplier: "0.000 000 000 000 000 000 001" },
+            { name: "yocto", thaiName: "ยอกโต", symbol: "y", power: -24, multiplier: "0.000 000 000 000 000 000 000 001" }
+        ];
+
+        // DOM Elements
+        const btnLearn = document.getElementById('btn-learn');
+        const btnExamples = document.getElementById('btn-examples');
+        const sectionLearn = document.getElementById('section-learn');
+        const sectionExamples = document.getElementById('section-examples');
+        const tableBody = document.getElementById('prefix-table-body');
+        
+        // Example Elements
+        const inputValue = document.getElementById('input-value');
+        const selectPrefix = document.getElementById('select-prefix');
+        const selectUnit = document.getElementById('select-unit');
+        const displayInputTerm = document.getElementById('display-input-term');
+        const displayResultDecimal = document.getElementById('display-result-decimal');
+        const displayResultScientific = document.getElementById('display-result-scientific');
+        const displayResultUnit = document.getElementById('display-result-unit');
+
+        // New Tool 2 Elements
+        const inputRawValue = document.getElementById('input-raw-value');
+        const selectRawUnit = document.getElementById('select-raw-unit');
+        const displayBestResult = document.getElementById('display-best-result');
+        const displayBestName = document.getElementById('display-best-name');
+        const displayBestScientific = document.getElementById('display-best-scientific');
+        const displayBestScientificUnit = document.getElementById('display-best-scientific-unit');
+
+        function init() {
+            setLanguage(currentLang); // Initialize language and populate everything
+            setupEventListeners();
+        }
+
+        /**
+         * Change Language Function
+         */
+        function setLanguage(lang) {
+            currentLang = lang;
+
+            // Update toggle buttons styling
+            const btnEn = document.getElementById('btn-lang-en');
+            const btnTh = document.getElementById('btn-lang-th');
+            
+            if (lang === 'en') {
+                btnEn.className = "lang-btn active";
+                btnTh.className = "lang-btn inactive";
+            } else {
+                btnEn.className = "lang-btn inactive";
+                btnTh.className = "lang-btn active";
+            }
+
+            // Translate static DOM text elements
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    element.innerHTML = translations[lang][key];
+                }
+            });
+
+            // Save current selections before re-populating dropdowns
+            const selectedPrefixIndex = selectPrefix.value || "7"; // default to kilo
+            const selectedUnitVal = selectUnit.value || "m";
+            const selectedRawUnitVal = selectRawUnit.value || "m";
+
+            // Re-populate Table and Dropdown to reflect new language names
+            populateTable();
+            populatePrefixDropdown();
+
+            // Restore selections
+            selectPrefix.value = selectedPrefixIndex;
+            selectUnit.value = selectedUnitVal;
+            selectRawUnit.value = selectedRawUnitVal;
+
+            // Re-trigger calculations to update dynamic text
+            calculateAndDisplay();
+            calculateBestPrefix();
+        }
+
+        /**
+         * Populates the learning table with data from siPrefixes array.
+         */
+        function populateTable() {
+            tableBody.innerHTML = '';
+            
+            // Add a visual separator for negative powers
+            let separatorAdded = false;
+
+            siPrefixes.forEach(prefix => {
+                
+                // Add a slightly different background for submultiples (negative powers)
+                if (prefix.power < 0 && !separatorAdded) {
+                    const sepRow = document.createElement('tr');
+                    sepRow.innerHTML = `<td colspan="4" class="bg-indigo-50 text-center text-xs py-1 text-indigo-400 font-semibold uppercase tracking-wider">${translations[currentLang].submultiplesHeader}</td>`;
+                    tableBody.appendChild(sepRow);
+                    separatorAdded = true;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-slate-50 transition duration-150 border-b border-slate-100 ${prefix.power > 0 ? '' : 'bg-slate-50/30'}`;
+                
+                const displayName = currentLang === 'th' ? prefix.thaiName : prefix.name;
+
+                tr.innerHTML = `
+                    <td class="p-3 whitespace-nowrap">
+                        <span class="font-bold text-slate-800 capitalize">${displayName}</span>
+                    </td>
+                    <td class="p-3 text-lg font-semibold font-mono text-indigo-600">${prefix.symbol}</td>
+                    <td class="p-3 text-right font-mono text-sm text-slate-600 whitespace-nowrap">${prefix.multiplier}</td>
+                    <td class="p-3 font-mono font-bold text-slate-800">10<sup>${prefix.power}</sup></td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        /**
+         * Populates the prefix dropdown for the Example section
+         */
+        function populatePrefixDropdown() {
+            selectPrefix.innerHTML = ''; // clear existing
+            
+            // Add "No Prefix" base option
+            const baseOpt = document.createElement('option');
+            baseOpt.value = "none";
+            baseOpt.textContent = translations[currentLang].optNoPrefix;
+            selectPrefix.appendChild(baseOpt);
+
+            siPrefixes.forEach((prefix, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                const displayName = currentLang === 'th' ? prefix.thaiName : prefix.name;
+                opt.textContent = `${displayName} (${prefix.symbol}) : 10^${prefix.power}`;
+                selectPrefix.appendChild(opt);
+            });
+        }
+
+        /**
+         * Core logic to calculate and render the example values
+         */
+        function calculateAndDisplay() {
+            const val = parseFloat(inputValue.value);
+            const unit = selectUnit.value;
+            const prefixVal = selectPrefix.value;
+            
+            // Handle empty or invalid input
+            if (isNaN(val)) {
+                displayInputTerm.innerHTML = `-`;
+                displayResultDecimal.innerHTML = `-`;
+                displayResultScientific.innerHTML = `-`;
+                displayResultUnit.innerHTML = unit;
+                return;
+            }
+
+            let prefixSymbol = "";
+            let power = 0;
+
+            if (prefixVal !== "none") {
+                const prefixData = siPrefixes[parseInt(prefixVal)];
+                prefixSymbol = prefixData.symbol;
+                power = prefixData.power;
+            }
+
+            // 1. Display Left Term (e.g. "5 km")
+            displayInputTerm.innerHTML = `${val} ${prefixSymbol}${unit}`;
+
+            // Calculate actual numerical value accurately avoiding typical JS floating point errors
+            const baseValueStr = val + 'e' + power;
+            let baseValue = Number(baseValueStr);
+
+            // 2. Format Scientific Term
+            if (baseValue === 0) {
+                displayResultScientific.innerHTML = `0`;
+            } else {
+                const expString = baseValue.toExponential(); 
+                const parts = expString.split('e');
+                const mantissa = parseFloat(parts[0]);
+                const exponent = parseInt(parts[1]);
+                
+                if (exponent === 0) {
+                    displayResultScientific.innerHTML = `${mantissa}`;
+                } else {
+                    displayResultScientific.innerHTML = `${mantissa} &times; 10<sup>${exponent}</sup>`;
+                }
+            }
+            displayResultUnit.innerHTML = unit;
+
+            // 3. Format Decimal Term
+            if (baseValue === 0) {
+                 displayResultDecimal.innerHTML = `0 ${unit}`;
+            } else if (Math.abs(power) > 15 || Math.abs(baseValue) >= 1e16) {
+                displayResultDecimal.innerHTML = `<span class="text-xl text-indigo-200 font-normal italic">${translations[currentLang].seeSciFormat}</span>`;
+            } else {
+                let formattedDec = baseValue.toLocaleString('en-US', { 
+                    maximumFractionDigits: 20,
+                    useGrouping: true
+                });
+                displayResultDecimal.innerHTML = `${formattedDec} ${unit}`;
+            }
+        }
+
+        /**
+         * Tool 2: Logic to find the best prefix for a raw number
+         */
+        function calculateBestPrefix() {
+            const val = parseFloat(inputRawValue.value);
+            const unit = selectRawUnit.value;
+            
+            if (isNaN(val) || val === 0) {
+                displayBestResult.innerHTML = `0 <span class="text-indigo-300">${unit}</span>`;
+                displayBestName.textContent = translations[currentLang].baseUnitNone;
+                displayBestScientific.innerHTML = `0`;
+                displayBestScientificUnit.innerHTML = unit;
+                return;
+            }
+
+            const absVal = Math.abs(val);
+            
+            // Find engineering power
+            let engPower = Math.floor(Math.log10(absVal) / 3) * 3;
+
+            // Cap to our available prefixes
+            if (engPower > 24) engPower = 24;
+            if (engPower < -24) engPower = -24;
+
+            // Find the matching prefix
+            let bestPrefix = siPrefixes.find(p => p.power === engPower);
+            
+            let prefixSymbol = "";
+            let prefixName = translations[currentLang].baseUnitNone;
+            let divisor = 1;
+
+            if (bestPrefix && engPower !== 0) {
+                prefixSymbol = bestPrefix.symbol;
+                const displayName = currentLang === 'th' ? bestPrefix.thaiName : bestPrefix.name;
+                prefixName = `${displayName} (${prefixSymbol})`;
+                divisor = Number('1e' + engPower);
+            }
+
+            const finalValue = val / divisor;
+            
+            let formattedVal = finalValue.toLocaleString('en-US', {
+                maximumFractionDigits: 3,
+                useGrouping: true
+            });
+
+            displayBestResult.innerHTML = `${formattedVal} <span class="text-indigo-300">${prefixSymbol}${unit}</span>`;
+            displayBestName.textContent = prefixName;
+
+            const expString = val.toExponential(); 
+            const parts = expString.split('e');
+            const mantissa = parseFloat(parts[0]);
+            const exponent = parseInt(parts[1]);
+            
+            if (exponent === 0) {
+                displayBestScientific.innerHTML = `${mantissa}`;
+            } else {
+                displayBestScientific.innerHTML = `${mantissa} &times; 10<sup>${exponent}</sup>`;
+            }
+            displayBestScientificUnit.innerHTML = unit;
+        }
+
+        /**
+         * Sets up UI event listeners for buttons and tabs.
+         */
+        function setupEventListeners() {
+            // Tab switching
+            btnLearn.addEventListener('click', () => {
+                sectionLearn.classList.remove('hide');
+                sectionExamples.classList.add('hide');
+                
+                btnLearn.className = "px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold shadow-md hover:bg-indigo-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50";
+                btnExamples.className = "px-6 py-2 bg-white text-indigo-600 border border-indigo-600 rounded-full font-semibold shadow-sm hover:bg-indigo-50 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50";
+            });
+
+            btnExamples.addEventListener('click', () => {
+                sectionLearn.classList.add('hide');
+                sectionExamples.classList.remove('hide');
+                
+                btnExamples.className = "px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold shadow-md hover:bg-indigo-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50";
+                btnLearn.className = "px-6 py-2 bg-white text-indigo-600 border border-indigo-600 rounded-full font-semibold shadow-sm hover:bg-indigo-50 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50";
+            });
+
+            // Interactive Example Listeners
+            inputValue.addEventListener('input', calculateAndDisplay);
+            selectPrefix.addEventListener('change', calculateAndDisplay);
+            selectUnit.addEventListener('change', calculateAndDisplay);
+
+            // Tool 2 Listeners
+            inputRawValue.addEventListener('input', calculateBestPrefix);
+            selectRawUnit.addEventListener('change', calculateBestPrefix);
+        }
+
+        // Run init on load
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
